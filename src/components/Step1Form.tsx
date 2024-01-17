@@ -1,5 +1,11 @@
 import React from "react";
-import { useForm, SubmitHandler, Controller } from "react-hook-form";
+import {
+  useForm,
+  SubmitHandler,
+  Controller,
+  useFormState,
+  useWatch,
+} from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import {
@@ -19,9 +25,10 @@ interface FormValues {
   name: string;
   age: number | null;
   sex: string;
-  mobile: string;
-  govtIdType: string;
-  govtId: string;
+  mobile?: string;
+  govtIdType?: string;
+  govtId?: string;
+  govtIdPan?: string;
 }
 
 const schema = yup.object().shape({
@@ -39,11 +46,21 @@ const schema = yup.object().shape({
   sex: yup.string().required("Sex is required"),
   mobile: yup
     .string()
-    .required("Mobile is required")
+    // .required("Mobile is required")
     .max(10)
     .matches(/^(\+\d{1,3}[- ]?)?\d{10}$/, "Enter a valid Indian mobile number"),
-  govtIdType: yup.string().required("govtIdType is required"),
-  govtId: yup.string().required("govtId is required"),
+  govtIdType: yup.string(),
+  govtId: yup
+    .string()
+    // .required("govtId is required")
+    .matches(
+      /^[2-9]\d{11}$/,
+      "Enter a 12-digit numeric value not starting with 0 or 1"
+    ),
+  govtIdPan: yup
+    .string()
+    // .required("govtIdPan is required")
+    .matches(/^[a-zA-Z0-9]{10}$/, "Enter a 10-character alphanumeric string"),
 });
 
 interface Step1FormProps {
@@ -57,6 +74,15 @@ const Step1Form: React.FC<Step1FormProps> = ({ onSubmit }) => {
     formState: { errors },
   } = useForm<FormValues>({
     resolver: yupResolver(schema),
+  });
+
+  // Use useFormState to access the current value of govtIdType
+  const { dirtyFields } = useFormState({ control });
+
+  // Use useWatch to get the real-time selected value of govtIdType
+  const govtIdType = useWatch({
+    control,
+    name: "govtIdType",
   });
 
   return (
@@ -149,21 +175,39 @@ const Step1Form: React.FC<Step1FormProps> = ({ onSubmit }) => {
                   <FormHelperText>{errors.govtIdType?.message}</FormHelperText>
                 </FormControl>
               </Grid>
-              <Grid item xs={4}>
-                <Controller
-                  name="govtId"
-                  control={control}
-                  render={({ field }) => (
-                    <TextField
-                      label="govtId"
-                      fullWidth
-                      {...field}
-                      error={!!errors.govtId}
-                      helperText={errors.govtId?.message}
-                    />
-                  )}
-                />
-              </Grid>
+              {govtIdType === "aadhar" ? (
+                <Grid item xs={4}>
+                  <Controller
+                    name="govtId"
+                    control={control}
+                    render={({ field }) => (
+                      <TextField
+                        label=""
+                        fullWidth
+                        {...field}
+                        error={!!errors.govtId}
+                        helperText={errors.govtId?.message}
+                      />
+                    )}
+                  />
+                </Grid>
+              ) : (
+                <Grid item xs={4}>
+                  <Controller
+                    name="govtIdPan"
+                    control={control}
+                    render={({ field }) => (
+                      <TextField
+                        label=""
+                        fullWidth
+                        {...field}
+                        error={!!errors.govtIdPan}
+                        helperText={errors.govtIdPan?.message}
+                      />
+                    )}
+                  />
+                </Grid>
+              )}
             </Grid>
           </Box>
           <Button
@@ -180,6 +224,7 @@ const Step1Form: React.FC<Step1FormProps> = ({ onSubmit }) => {
         </Box>
       </form>
       <Box sx={{ marginTop: "2rem" }}>
+        <h1>Data Table</h1>
         <UserTable />
       </Box>
     </>
